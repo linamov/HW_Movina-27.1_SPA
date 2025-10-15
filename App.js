@@ -1,14 +1,12 @@
-const { useState, useEffect, createContext, useContext } = React;
-
 /* ===== Theme Context ===== */
-const ThemeContext = createContext();
+const ThemeContext = React.createContext();
 
-function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('light');
-  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+function ThemeProvider(props) {
+  const [theme, setTheme] = React.useState('light');
+  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <div className={theme === 'dark' ? 'dark-theme' : ''}>{children}</div>
+    <ThemeContext.Provider value={{ theme: theme, toggleTheme: toggleTheme }}>
+      <div className={theme === 'dark' ? 'dark-theme' : ''}>{props.children}</div>
     </ThemeContext.Provider>
   );
 }
@@ -32,29 +30,35 @@ class ErrorBoundary extends React.Component {
 }
 
 /* ===== Header ===== */
-function Header({ setPage }) {
-  const { theme, toggleTheme } = useContext(ThemeContext);
+function Header(props) {
+  const ctx = React.useContext(ThemeContext);
   return (
     <header>
       <h3>Alina's SPA</h3>
       <nav>
-        <button className="btn btn-link" onClick={() => setPage('home')}>Home</button>
-        <button className="btn btn-link" onClick={() => setPage('contacts')}>Contacts</button>
-        <button className="btn btn-link" onClick={() => setPage('about')}>About Me</button>
+        <button className="btn btn-link" onClick={() => props.setPage('home')}>Home</button>
+        <button className="btn btn-link" onClick={() => props.setPage('contacts')}>Contacts</button>
+        <button className="btn btn-link" onClick={() => props.setPage('about')}>About Me</button>
       </nav>
-      <button className="btn btn-secondary" onClick={toggleTheme}>
-        {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+      <button className="btn btn-secondary" onClick={ctx.toggleTheme}>
+        {ctx.theme === 'light' ? 'Dark Mode' : 'Light Mode'}
       </button>
     </header>
   );
 }
 
 /* ===== Modal ===== */
-function Modal({ show, task, onClose, onSave }) {
-  const [description, setDescription] = useState(task && task.description ? task.description : '');
-  useEffect(() => setDescription(task && task.description ? task.description : ''), [task]);
+function Modal(props) {
+  const [description, setDescription] = React.useState(
+    props.task && props.task.description ? props.task.description : ''
+  );
 
-  if (!show) return null;
+  React.useEffect(() => {
+    setDescription(props.task && props.task.description ? props.task.description : '');
+  }, [props.task]);
+
+  if (!props.show) return null;
+
   return (
     <div className="modal-backdrop">
       <div className="modal-content">
@@ -62,12 +66,12 @@ function Modal({ show, task, onClose, onSave }) {
         <input 
           className="form-control mb-2" 
           value={description} 
-          onChange={e => setDescription(e.target.value)} 
+          onChange={function(e){setDescription(e.target.value)}} 
           placeholder="Description..."
         />
         <div className="d-flex gap-2 mt-2">
-          <button className="btn btn-primary" onClick={() => onSave(description)}>Save</button>
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={function(){props.onSave(description)}}>Save</button>
+          <button className="btn btn-secondary" onClick={props.onClose}>Cancel</button>
         </div>
       </div>
     </div>
@@ -76,40 +80,44 @@ function Modal({ show, task, onClose, onSave }) {
 
 /* ===== Home / TODO List ===== */
 function Home() {
-  const [tasks, setTasks] = useState(() => {
+  const [tasks, setTasks] = React.useState(function() {
     const stored = localStorage.getItem('tasks');
     return stored ? JSON.parse(stored) : [];
   });
-  const [newTask, setNewTask] = useState('');
-  const [modalTask, setModalTask] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [newTask, setNewTask] = React.useState('');
+  const [modalTask, setModalTask] = React.useState(null);
+  const [showModal, setShowModal] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(function(){
     localStorage.setItem('tasks', JSON.stringify(tasks));
   }, [tasks]);
 
-  const addTask = () => {
+  const addTask = function() {
     if (!newTask.trim()) return;
-    setTasks([...tasks, { id: Date.now(), title: newTask, description: '', done: false }]);
+    setTasks(tasks.concat([{ id: Date.now(), title: newTask, description: '', done: false }]));
     setNewTask('');
   };
 
-  const toggleDone = (id) => {
-    setTasks(tasks.map(t => t.id === id ? {...t, done: !t.done} : t));
+  const toggleDone = function(id) {
+    setTasks(tasks.map(function(t){
+      return t.id === id ? {...t, done: !t.done} : t;
+    }));
   };
 
-  const openModal = (task) => {
+  const openModal = function(task) {
     setModalTask(task);
     setShowModal(true);
   };
 
-  const saveModal = (desc) => {
-    setTasks(tasks.map(t => t.id === modalTask.id ? {...t, description: desc} : t));
+  const saveModal = function(desc) {
+    setTasks(tasks.map(function(t){
+      return t.id === modalTask.id ? {...t, description: desc} : t;
+    }));
     setShowModal(false);
   };
 
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(t => t.id !== id));
+  const deleteTask = function(id) {
+    setTasks(tasks.filter(function(t){return t.id !== id;}));
   };
 
   return (
@@ -120,27 +128,29 @@ function Home() {
           className="form-control me-2" 
           placeholder="New task..." 
           value={newTask} 
-          onChange={e => setNewTask(e.target.value)}
+          onChange={function(e){setNewTask(e.target.value)}}
         />
         <button className="btn btn-primary" onClick={addTask}>Add</button>
       </div>
       <ul className="todo-list">
-        {tasks.map(task => (
-          <li key={task.id} className={task.done ? 'done' : ''}>
-            <div>
-              <input type="checkbox" checked={task.done} onChange={() => toggleDone(task.id)} />
-              <span onClick={() => openModal(task)} style={{cursor:'pointer', marginLeft:'8px'}}>
-                {task.title}
-              </span>
-            </div>
-            <button className="btn btn-danger btn-sm" onClick={() => deleteTask(task.id)}>Delete</button>
-          </li>
-        ))}
+        {tasks.map(function(task){
+          return (
+            <li key={task.id} className={task.done ? 'done' : ''}>
+              <div>
+                <input type="checkbox" checked={task.done} onChange={function(){toggleDone(task.id)}} />
+                <span onClick={function(){openModal(task)}} style={{cursor:'pointer', marginLeft:'8px'}}>
+                  {task.title}
+                </span>
+              </div>
+              <button className="btn btn-danger btn-sm" onClick={function(){deleteTask(task.id)}}>Delete</button>
+            </li>
+          );
+        })}
       </ul>
       <Modal 
         show={showModal} 
         task={modalTask} 
-        onClose={() => setShowModal(false)} 
+        onClose={function(){setShowModal(false)}} 
         onSave={saveModal} 
       />
     </div>
@@ -172,7 +182,7 @@ function About() {
 
 /* ===== Main App ===== */
 function App() {
-  const [page, setPage] = useState('home');
+  const [page, setPage] = React.useState('home');
   return (
     <ErrorBoundary>
       <Header setPage={setPage} />

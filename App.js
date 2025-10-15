@@ -1,6 +1,6 @@
-const { useState, useEffect, useContext, createContext } = React;
+const { useState, useEffect, createContext, useContext } = React;
 
-// ===== Theme Context =====
+/* ===== Theme Context ===== */
 const ThemeContext = createContext();
 
 function ThemeProvider({ children }) {
@@ -13,24 +13,7 @@ function ThemeProvider({ children }) {
   );
 }
 
-// ===== Header =====
-function Header({ setPage }) {
-  const { theme, toggleTheme } = useContext(ThemeContext);
-  return (
-    <header>
-      <nav>
-        <button className="btn btn-link" onClick={() => setPage('home')}>Home</button>
-        <button className="btn btn-link" onClick={() => setPage('contacts')}>Contacts</button>
-        <button className="btn btn-link" onClick={() => setPage('about')}>About Me</button>
-      </nav>
-      <button className="btn btn-secondary" onClick={toggleTheme}>
-        {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-      </button>
-    </header>
-  );
-}
-
-// ===== Error Boundary =====
+/* ===== Error Boundary ===== */
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -48,10 +31,28 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// ===== Modal =====
+/* ===== Header ===== */
+function Header({ setPage }) {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+  return (
+    <header>
+      <h3>Alina's SPA</h3>
+      <nav>
+        <button className="btn btn-link" onClick={() => setPage('home')}>Home</button>
+        <button className="btn btn-link" onClick={() => setPage('contacts')}>Contacts</button>
+        <button className="btn btn-link" onClick={() => setPage('about')}>About Me</button>
+      </nav>
+      <button className="btn btn-secondary" onClick={toggleTheme}>
+        {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+      </button>
+    </header>
+  );
+}
+
+/* ===== Modal ===== */
 function Modal({ show, task, onClose, onSave }) {
-  const [description, setDescription] = useState(task?.description || '');
-  useEffect(() => setDescription(task?.description || ''), [task]);
+  const [description, setDescription] = useState(task && task.description ? task.description : '');
+  useEffect(() => setDescription(task && task.description ? task.description : ''), [task]);
 
   if (!show) return null;
   return (
@@ -73,83 +74,72 @@ function Modal({ show, task, onClose, onSave }) {
   );
 }
 
-// ===== Home (TODO) =====
+/* ===== Home / TODO List ===== */
 function Home() {
-  const [todos, setTodos] = useState([]);
-  const [input, setInput] = useState('');
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [tasks, setTasks] = useState(() => {
+    const stored = localStorage.getItem('tasks');
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [newTask, setNewTask] = useState('');
+  const [modalTask, setModalTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Load from localStorage
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('todos')) || [];
-    setTodos(stored);
-  }, []);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
 
-  // Save to localStorage
-  useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
-
-  const addTodo = () => {
-    if (input.trim() !== '') {
-      setTodos([...todos, { title: input, done: false, description: '' }]);
-      setInput('');
-    }
+  const addTask = () => {
+    if (!newTask.trim()) return;
+    setTasks([...tasks, { id: Date.now(), title: newTask, description: '', done: false }]);
+    setNewTask('');
   };
 
-  const toggleDone = (index) => {
-    const newTodos = [...todos];
-    newTodos[index].done = !newTodos[index].done;
-    setTodos(newTodos);
+  const toggleDone = (id) => {
+    setTasks(tasks.map(t => t.id === id ? {...t, done: !t.done} : t));
   };
 
-  const deleteTodo = (index) => {
-    const newTodos = todos.filter((_, i) => i !== index);
-    setTodos(newTodos);
-  };
-
-  const openModal = (index) => {
-    setSelectedTask({ ...todos[index], index });
+  const openModal = (task) => {
+    setModalTask(task);
     setShowModal(true);
   };
 
-  const saveModal = (description) => {
-    const newTodos = [...todos];
-    newTodos[selectedTask.index].description = description;
-    setTodos(newTodos);
+  const saveModal = (desc) => {
+    setTasks(tasks.map(t => t.id === modalTask.id ? {...t, description: desc} : t));
     setShowModal(false);
+  };
+
+  const deleteTask = (id) => {
+    setTasks(tasks.filter(t => t.id !== id));
   };
 
   return (
     <div className="container">
-      <h2>My Todo List 📝</h2>
-      <div className="mb-3 d-flex gap-2">
+      <h2>My TODO List</h2>
+      <div className="d-flex mb-3">
         <input 
-          className="form-control" 
-          value={input} 
-          onChange={e => setInput(e.target.value)} 
-          placeholder="Enter a task..."
+          className="form-control me-2" 
+          placeholder="New task..." 
+          value={newTask} 
+          onChange={e => setNewTask(e.target.value)}
         />
-        <button className="btn btn-primary" onClick={addTodo}>Add</button>
+        <button className="btn btn-primary" onClick={addTask}>Add</button>
       </div>
-      <ul className="list-group todo-list">
-        {todos.map((t, i) => (
-          <li key={i} className={`list-group-item d-flex justify-content-between align-items-center ${t.done ? 'done' : ''}`}>
+      <ul className="todo-list">
+        {tasks.map(task => (
+          <li key={task.id} className={task.done ? 'done' : ''}>
             <div>
-              <input type="checkbox" checked={t.done} onChange={() => toggleDone(i)} />
-              <span onClick={() => openModal(i)} style={{ cursor: 'pointer', marginLeft: '10px' }}>
-                {t.title}
+              <input type="checkbox" checked={task.done} onChange={() => toggleDone(task.id)} />
+              <span onClick={() => openModal(task)} style={{cursor:'pointer', marginLeft:'8px'}}>
+                {task.title}
               </span>
             </div>
-            <button className="btn btn-danger btn-sm" onClick={() => deleteTodo(i)}>Delete</button>
+            <button className="btn btn-danger btn-sm" onClick={() => deleteTask(task.id)}>Delete</button>
           </li>
         ))}
       </ul>
-
       <Modal 
         show={showModal} 
-        task={selectedTask} 
+        task={modalTask} 
         onClose={() => setShowModal(false)} 
         onSave={saveModal} 
       />
@@ -157,34 +147,32 @@ function Home() {
   );
 }
 
-// ===== Contacts =====
+/* ===== Contacts ===== */
 function Contacts() {
   return (
     <div className="container">
-      <h2>Contacts 📞</h2>
-      <p>Email: alina@example.com</p>
-      <p>Phone: +380 00 000 00 00</p>
-      <p>Feel free to reach out! 💌</p>
+      <h2>Contacts</h2>
+      <p>You can reach me via email: alina@example.com</p>
+      <p>Or call: +123456789</p>
     </div>
   );
 }
 
-// ===== About =====
+/* ===== About Me ===== */
 function About() {
   return (
     <div className="container">
-      <h2>About Me 🌟</h2>
-      <p>Hi! My name is Alina, I am a Project Manager. 🏆 I love dancing, delicious food, traveling, and meeting new people. 💃🍣✈️</p>
-      <p>Here are some of my favorite things: 🐶🐱🎉</p>
-      <img src="./images/Cat.jpg" alt="Cute cat" />
+      <h2>About Me</h2>
+      <p>Hi! I'm Alina, a Project Manager. I love dancing, eating delicious food, traveling, and meeting new people!</p>
+      <p>Here are some fun stickers: 🐱🐶🌸🎵✈️🍰</p>
+      <img src="Image1/cat.jpg" alt="Cat" />
     </div>
   );
 }
 
-// ===== App =====
+/* ===== Main App ===== */
 function App() {
   const [page, setPage] = useState('home');
-
   return (
     <ErrorBoundary>
       <Header setPage={setPage} />
@@ -195,7 +183,7 @@ function App() {
   );
 }
 
-// ===== Render =====
+/* ===== Render ===== */
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <ThemeProvider>

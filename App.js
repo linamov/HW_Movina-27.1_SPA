@@ -1,203 +1,212 @@
-/* ===== Theme Context ===== */
 const ThemeContext = React.createContext();
 
+/* ThemeProvider: sets class on wrapper .app-root so CSS covers whole page */
 function ThemeProvider(props) {
   const [theme, setTheme] = React.useState('light');
-  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
-  return (
-    <ThemeContext.Provider value={{ theme: theme, toggleTheme: toggleTheme }}>
-      <div className={theme === 'dark' ? 'dark-theme' : ''} style={{ minHeight: '100vh' }}>
-        {props.children}
-      </div>
-    </ThemeContext.Provider>
+  const toggleTheme = function() { setTheme(theme === 'light' ? 'dark' : 'light'); };
+  return React.createElement(
+    ThemeContext.Provider,
+    { value: { theme: theme, toggleTheme: toggleTheme } },
+    React.createElement('div', { className: 'app-root' + (theme === 'dark' ? ' dark-theme' : '') }, props.children)
   );
 }
 
-/* ===== Error Boundary ===== */
+/* ErrorBoundary */
 class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError(error) {
-    return { hasError: true };
-  }
-  componentDidCatch(error, info) {
-    console.error("ErrorBoundary caught:", error, info);
-  }
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError(err) { return { hasError: true }; }
+  componentDidCatch(err, info) { console.error('ErrorBoundary caught', err, info); }
   render() {
-    if (this.state.hasError) return <h2 className="text-center mt-5">Something went wrong!</h2>;
+    if (this.state.hasError) return React.createElement('h2', { className: 'text-center mt-5' }, 'Something went wrong!');
     return this.props.children;
   }
 }
 
-/* ===== Header ===== */
+/* Header */
 function Header(props) {
   const ctx = React.useContext(ThemeContext);
-  return (
-    <header>
-      <h3>Alina's SPA</h3>
-      <nav>
-        <button className="btn btn-link" onClick={() => props.setPage('home')}>Home</button>
-        <button className="btn btn-link" onClick={() => props.setPage('contacts')}>Contacts</button>
-        <button className="btn btn-link" onClick={() => props.setPage('about')}>About Me</button>
-      </nav>
-      <button className="btn btn-secondary" onClick={ctx.toggleTheme}>
-        {ctx.theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-      </button>
-    </header>
+  return React.createElement('header', { className: 'header' },
+    React.createElement('div', { className: 'brand' }, "Alina's SPA"),
+    React.createElement('div', { className: 'nav-buttons' },
+      React.createElement('button', { onClick: function(){ props.setPage('home'); } }, 'Home'),
+      React.createElement('button', { onClick: function(){ props.setPage('contacts'); } }, 'Contacts'),
+      React.createElement('button', { onClick: function(){ props.setPage('about'); } }, 'About Me')
+    ),
+    React.createElement('button', { className: 'theme-toggle', onClick: ctx.toggleTheme }, ctx.theme === 'light' ? 'Dark Mode' : 'Light Mode')
   );
 }
 
-/* ===== Modal ===== */
+/* Modal - uses props.task (object) */
 function Modal(props) {
-  const [description, setDescription] = React.useState(
-    props.task && props.task.description ? props.task.description : ''
-  );
+  const initial = (props.task && props.task.description) ? props.task.description : '';
+  const [description, setDescription] = React.useState(initial);
 
-  React.useEffect(() => {
-    setDescription(props.task && props.task.description ? props.task.description : '');
+  React.useEffect(function(){
+    setDescription((props.task && props.task.description) ? props.task.description : '');
   }, [props.task]);
 
   if (!props.show) return null;
 
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-content">
-        <h4>Edit Task</h4>
-        <input 
-          className="form-control mb-2" 
-          value={description} 
-          onChange={function(e){setDescription(e.target.value)}} 
-          placeholder="Description..."
-        />
-        <div className="d-flex gap-2 mt-2">
-          <button className="btn btn-primary" onClick={function(){props.onSave(description)}}>Save</button>
-          <button className="btn btn-secondary" onClick={props.onClose}>Cancel</button>
-        </div>
-      </div>
-    </div>
+  return React.createElement('div', { className: 'modal-backdrop' },
+    React.createElement('div', { className: 'modal-box' },
+      React.createElement('h4', null, 'Edit Task'),
+      React.createElement('input', {
+        className: 'form-control',
+        placeholder: 'Description...',
+        value: description,
+        onChange: function(e){ setDescription(e.target.value); }
+      }),
+      React.createElement('div', { className: 'modal-actions' },
+        React.createElement('button', { className: 'btn btn-secondary', onClick: props.onClose }, 'Cancel'),
+        React.createElement('button', { className: 'btn btn-primary', onClick: function(){ props.onSave(description); } }, 'Save')
+      )
+    )
   );
 }
 
-/* ===== Home ===== */
+/* Home (TODO) */
 function Home() {
-  const [tasks, setTasks] = React.useState(function() {
-    const stored = localStorage.getItem('tasks');
-    return stored ? JSON.parse(stored) : [];
+  const [tasks, setTasks] = React.useState(function(){
+    try {
+      var stored = localStorage.getItem('tasks');
+      return stored ? JSON.parse(stored) : [];
+    } catch(e) { return []; }
   });
   const [newTask, setNewTask] = React.useState('');
   const [modalTask, setModalTask] = React.useState(null);
   const [showModal, setShowModal] = React.useState(false);
 
   React.useEffect(function(){
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    try { localStorage.setItem('tasks', JSON.stringify(tasks)); } catch(e){}
   }, [tasks]);
 
-  const addTask = function() {
-    if (!newTask.trim()) return;
-    setTasks(tasks.concat([{ id: Date.now(), title: newTask, description: '', done: false }]));
+  var addTask = function(){
+    if (!newTask || !newTask.trim()) return;
+    setTasks(tasks.concat([{ id: Date.now(), title: newTask.trim(), description: '', done: false }]));
     setNewTask('');
   };
 
-  const toggleDone = function(id) {
+  var toggleDone = function(id){
     setTasks(tasks.map(function(t){
-      return t.id === id ? {...t, done: !t.done} : t;
+      return t.id === id ? Object.assign({}, t, { done: !t.done }) : t;
     }));
   };
 
-  const openModal = function(task) {
+  var openModal = function(task){
     setModalTask(task);
     setShowModal(true);
   };
 
-  const saveModal = function(desc) {
+  var saveModal = function(desc){
     setTasks(tasks.map(function(t){
-      return t.id === modalTask.id ? {...t, description: desc} : t;
+      return t.id === modalTask.id ? Object.assign({}, t, { description: desc }) : t;
     }));
     setShowModal(false);
   };
 
-  const deleteTask = function(id) {
-    setTasks(tasks.filter(function(t){return t.id !== id;}));
+  var deleteTask = function(id){
+    setTasks(tasks.filter(function(t){ return t.id !== id; }));
   };
 
-  return (
-    <div className="container">
-      <h2>My TODO List</h2>
-      <div className="d-flex mb-3">
-        <input 
-          className="form-control me-2" 
-          placeholder="New task..." 
-          value={newTask} 
-          onChange={function(e){setNewTask(e.target.value)}}
-        />
-        <button className="btn btn-primary" onClick={addTask}>Add</button>
-      </div>
-      <ul className="todo-list">
-        {tasks.map(function(task){
-          return (
-            <li key={task.id} className={task.done ? 'done' : ''} onClick={function(){openModal(task)}}>
-              <div>
-                <input type="checkbox" checked={task.done} onChange={function(e){e.stopPropagation(); toggleDone(task.id)}} />
-                <span style={{marginLeft:'8px'}}>{task.title}</span>
-              </div>
-              <button className="btn btn-danger btn-sm" onClick={function(e){e.stopPropagation(); deleteTask(task.id)}}>Delete</button>
-            </li>
-          );
-        })}
-      </ul>
-      <Modal 
-        show={showModal} 
-        task={modalTask} 
-        onClose={function(){setShowModal(false)}} 
-        onSave={saveModal} 
-      />
-    </div>
+  return React.createElement('div', { className: 'page' },
+    React.createElement('div', { className: 'hero' },
+      React.createElement('div', { className: 'h1' },
+        React.createElement('span', null, 'My Todo List'),
+        React.createElement('span', { className: 'emoji' }, '📝')
+      ),
+      React.createElement('div', { className: 'input-row' },
+        React.createElement('input', {
+          className: 'form-control',
+          placeholder: 'Enter a task...',
+          value: newTask,
+          onChange: function(e){ setNewTask(e.target.value); },
+          onKeyDown: function(e){ if (e.key === 'Enter') addTask(); }
+        }),
+        React.createElement('button', { className: 'add-btn', onClick: addTask }, 'Add')
+      )
+    ),
+    React.createElement('ul', { className: 'todo-list' },
+      tasks.map(function(task){
+        return React.createElement('li', {
+          key: task.id,
+          className: 'todo-item' + (task.done ? ' done' : ''),
+          onClick: function(){ openModal(task); }
+        },
+          React.createElement('div', { className: 'todo-left' },
+            React.createElement('label', { className: 'todo-checkbox' },
+              React.createElement('input', {
+                type: 'checkbox',
+                checked: task.done,
+                onChange: function(e){ e.stopPropagation(); toggleDone(task.id); }
+              })
+            ),
+            React.createElement('div', null,
+              React.createElement('div', { className: 'todo-title' }, task.title),
+              task.description ? React.createElement('div', { className: 'task-desc' }, task.description) : null
+            )
+          ),
+          React.createElement('div', { className: 'actions' },
+            React.createElement('button', {
+              className: 'del-btn',
+              onClick: function(e){ e.stopPropagation(); deleteTask(task.id); }
+            }, 'Delete')
+          )
+        );
+      })
+    ),
+    React.createElement(Modal, { show: showModal, task: modalTask, onClose: function(){ setShowModal(false); }, onSave: saveModal })
   );
 }
 
-/* ===== Contacts ===== */
+/* Contacts */
 function Contacts() {
-  return (
-    <div className="container">
-      <h2>Contacts</h2>
-      <p>You can reach me via email: alina@example.com</p>
-      <p>Or call: +123456789</p>
-      <p className="about-stickers">🐱 🐶 🌸 🎵 ✈️ 🍰</p>
-    </div>
+  return React.createElement('div', { className: 'page' },
+    React.createElement('div', { className: 'hero' },
+      React.createElement('h2', null, 'Contacts'),
+      React.createElement('p', null, 'You can reach me via email: alina@example.com'),
+      React.createElement('p', null, 'Or call: +123456789'),
+      React.createElement('div', { className: 'about-stickers' },
+        React.createElement('span', { className: 's1' }, '🐱'),
+        React.createElement('span', { className: 's2' }, '🐶'),
+        React.createElement('span', { className: 's3' }, '🌸'),
+        React.createElement('span', { className: 's4' }, '🎵'),
+        React.createElement('span', { className: 's5' }, '✈️'),
+        React.createElement('span', { className: 's6' }, '🍰')
+      )
+    )
   );
 }
 
-/* ===== About Me ===== */
+/* About */
 function About() {
-  return (
-    <div className="container">
-      <h2>About Me</h2>
-      <p>Hi! I'm Alina, a Project Manager. I love dancing, eating delicious food, traveling, and meeting new people!</p>
-      <p className="about-stickers">🐱🐶🌸🎵✈️🍰</p>
-      <img src="Image1/cat.jpg" alt="Cat" />
-    </div>
+  return React.createElement('div', { className: 'page' },
+    React.createElement('div', { className: 'hero' },
+      React.createElement('h2', null, 'About Me'),
+      React.createElement('p', null, "Hi! I'm Alina, a Project Manager. I love dancing, eating delicious food, traveling, and meeting new people!"),
+      React.createElement('p', { className: 'about-stickers' },
+        React.createElement('span', { className: 's1' }, '🐱'),
+        React.createElement('span', { className: 's2' }, '🐶'),
+        React.createElement('span', { className: 's3' }, '🌸'),
+        React.createElement('span', { className: 's4' }, '🎵'),
+        React.createElement('span', { className: 's5' }, '✈️'),
+        React.createElement('span', { className: 's6' }, '🍰')
+      ),
+      React.createElement('img', { src: 'Image1/cat.jpg', alt: 'Cat' })
+    )
   );
 }
 
-/* ===== Main App ===== */
+/* Main App */
 function App() {
   const [page, setPage] = React.useState('home');
-  return (
-    <ErrorBoundary>
-      <Header setPage={setPage} />
-      {page === 'home' && <Home />}
-      {page === 'contacts' && <Contacts />}
-      {page === 'about' && <About />}
-    </ErrorBoundary>
+  return React.createElement(ErrorBoundary, null,
+    React.createElement(Header, { setPage: setPage }),
+    page === 'home' ? React.createElement(Home, null) : null,
+    page === 'contacts' ? React.createElement(Contacts, null) : null,
+    page === 'about' ? React.createElement(About, null) : null
   );
 }
 
-/* ===== Render ===== */
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <ThemeProvider>
-    <App />
-  </ThemeProvider>
-);
+/* Render */
+var root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(ThemeProvider, null, React.createElement(App, null)));

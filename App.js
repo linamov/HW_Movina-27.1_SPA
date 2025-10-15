@@ -1,5 +1,5 @@
 const { useState, useContext, createContext } = React;
-const { BrowserRouter, Routes, Route, Link } = ReactRouterDOM;
+const { HashRouter, Routes, Route, Link } = ReactRouterDOM;
 
 // ======= Theme Context =======
 const ThemeContext = createContext();
@@ -20,9 +20,9 @@ function Header() {
   return (
     <header className="d-flex justify-content-between align-items-center">
       <nav>
-        <Link to="/">Головна</Link>
-        <Link to="/contacts">Контакти</Link>
-        <Link to="/about">Про мене</Link>
+        <Link to="#/">Головна</Link>
+        <Link to="#/contacts">Контакти</Link>
+        <Link to="#/about">Про мене</Link>
       </nav>
       <button className="toggle-theme" onClick={toggleTheme}>
         {theme === 'dark' ? 'Світла тема' : 'Темна тема'}
@@ -111,7 +111,7 @@ function About() {
 function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <HashRouter>
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -119,7 +119,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="*" element={<h2 className="container">Сторінка не знайдена</h2>} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </ErrorBoundary>
   );
 }

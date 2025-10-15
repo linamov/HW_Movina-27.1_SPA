@@ -1,4 +1,4 @@
-const { useState, useContext, createContext } = React;
+const { useState, useEffect, useContext, createContext } = React;
 
 // ===== Theme Context =====
 const ThemeContext = createContext();
@@ -48,19 +48,82 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+// ===== Modal =====
+function Modal({ show, task, onClose, onSave }) {
+  const [description, setDescription] = useState(task?.description || '');
+  useEffect(() => setDescription(task?.description || ''), [task]);
+
+  if (!show) return null;
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content">
+        <h4>Edit Task</h4>
+        <input 
+          className="form-control mb-2" 
+          value={description} 
+          onChange={e => setDescription(e.target.value)} 
+          placeholder="Description..."
+        />
+        <div className="d-flex gap-2 mt-2">
+          <button className="btn btn-primary" onClick={() => onSave(description)}>Save</button>
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ===== Home (TODO) =====
 function Home() {
   const [todos, setTodos] = useState([]);
   const [input, setInput] = useState('');
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Load from localStorage
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('todos')) || [];
+    setTodos(stored);
+  }, []);
+
+  // Save to localStorage
+  useEffect(() => {
+    localStorage.setItem('todos', JSON.stringify(todos));
+  }, [todos]);
 
   const addTodo = () => {
-    if(input.trim() !== '') setTodos([...todos, input]);
-    setInput('');
+    if (input.trim() !== '') {
+      setTodos([...todos, { title: input, done: false, description: '' }]);
+      setInput('');
+    }
+  };
+
+  const toggleDone = (index) => {
+    const newTodos = [...todos];
+    newTodos[index].done = !newTodos[index].done;
+    setTodos(newTodos);
+  };
+
+  const deleteTodo = (index) => {
+    const newTodos = todos.filter((_, i) => i !== index);
+    setTodos(newTodos);
+  };
+
+  const openModal = (index) => {
+    setSelectedTask({ ...todos[index], index });
+    setShowModal(true);
+  };
+
+  const saveModal = (description) => {
+    const newTodos = [...todos];
+    newTodos[selectedTask.index].description = description;
+    setTodos(newTodos);
+    setShowModal(false);
   };
 
   return (
     <div className="container">
-      <h2>My Todo List <span className="sticker">📝</span></h2>
+      <h2>My Todo List 📝</h2>
       <div className="mb-3 d-flex gap-2">
         <input 
           className="form-control" 
@@ -71,8 +134,25 @@ function Home() {
         <button className="btn btn-primary" onClick={addTodo}>Add</button>
       </div>
       <ul className="list-group todo-list">
-        {todos.map((t,i) => <li key={i}>{t}</li>)}
+        {todos.map((t, i) => (
+          <li key={i} className={`list-group-item d-flex justify-content-between align-items-center ${t.done ? 'done' : ''}`}>
+            <div>
+              <input type="checkbox" checked={t.done} onChange={() => toggleDone(i)} />
+              <span onClick={() => openModal(i)} style={{ cursor: 'pointer', marginLeft: '10px' }}>
+                {t.title}
+              </span>
+            </div>
+            <button className="btn btn-danger btn-sm" onClick={() => deleteTodo(i)}>Delete</button>
+          </li>
+        ))}
       </ul>
+
+      <Modal 
+        show={showModal} 
+        task={selectedTask} 
+        onClose={() => setShowModal(false)} 
+        onSave={saveModal} 
+      />
     </div>
   );
 }
@@ -81,10 +161,10 @@ function Home() {
 function Contacts() {
   return (
     <div className="container">
-      <h2>Contacts <span className="sticker">📞</span></h2>
+      <h2>Contacts 📞</h2>
       <p>Email: alina@example.com</p>
       <p>Phone: +380 00 000 00 00</p>
-      <p>Feel free to reach out! <span className="sticker">💌</span></p>
+      <p>Feel free to reach out! 💌</p>
     </div>
   );
 }
@@ -93,9 +173,9 @@ function Contacts() {
 function About() {
   return (
     <div className="container">
-      <h2>About Me <span className="sticker">🌟</span></h2>
-      <p>Hi! My name is Alina, I am a Project Manager. 🏆 I love dancing, delicious food, traveling, and meeting new people. <span className="sticker">💃🍣✈️</span></p>
-      <p>Here are some of my favorite things: <span className="sticker">🐶🐱🎉</span></p>
+      <h2>About Me 🌟</h2>
+      <p>Hi! My name is Alina, I am a Project Manager. 🏆 I love dancing, delicious food, traveling, and meeting new people. 💃🍣✈️</p>
+      <p>Here are some of my favorite things: 🐶🐱🎉</p>
       <img src="./images/Cat.jpg" alt="Cute cat" />
     </div>
   );

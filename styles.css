@@ -1,72 +1,87 @@
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   margin: 0;
   padding: 0;
-  transition: background 0.3s, color 0.3s;
+  background: linear-gradient(to right, #f0f4f8, #e0e7ff);
+  transition: background 0.5s;
+}
+
+.dark-theme {
+  background: linear-gradient(to right, #1c1c2c, #2c2c3c);
+  color: #f0f0f0;
 }
 
 header {
-  padding: 1rem;
+  background-color: rgba(255,255,255,0.9);
+  padding: 1rem 2rem;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-nav a {
-  margin: 0 1rem;
-  text-decoration: none;
-  font-weight: bold;
-  color: inherit;
+header nav button {
+  margin-right: 10px;
+  font-weight: 600;
+  transition: 0.3s;
 }
 
-nav a:hover {
-  text-decoration: underline;
+header nav button:hover {
+  color: #4f46e5;
+  transform: scale(1.1);
 }
 
-button {
-  margin-left: 0.5rem;
+header .btn-secondary {
+  transition: 0.3s;
+}
+
+header .btn-secondary:hover {
+  transform: scale(1.05);
 }
 
 .container {
   padding: 2rem;
+  max-width: 900px;
+  margin: auto;
 }
 
-.todo-input {
-  padding: 0.5rem;
-  margin-right: 0.5rem;
-  width: 250px;
+button.btn {
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+button.btn:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .todo-list li {
-  margin: 0.3rem 0;
-  list-style: none;
-  padding: 0.5rem;
-  background: #f0f0f0;
-  border-radius: 5px;
-}
-
-.dark-theme {
-  background-color: #1c1c1c;
-  color: #f0f0f0;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  background-color: rgba(255,255,255,0.8);
+  transition: 0.3s;
 }
 
 .dark-theme .todo-list li {
-  background: #333;
-}
-
-button.toggle-theme {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 5px;
-}
-
-button.toggle-theme:hover {
-  background-color: #0056b3;
+  background-color: rgba(60,60,80,0.8);
 }
 
 img {
   max-width: 100%;
-  height: auto;
+  border-radius: 10px;
+  margin-top: 1rem;
+}
+
+.sticker {
+  font-size: 2rem;
+  margin: 0 5px;
+  animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-10px); }
 }

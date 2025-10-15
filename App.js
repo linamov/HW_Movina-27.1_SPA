@@ -175,19 +175,22 @@ function About(){
   );
 }
 
-/* App */
-function App(){
-  var [page, setPage] = React.useState('home');
+// ===== App =====
+function App() {
+  const [page, setPage] = useState('home');
+
   return (
     <ErrorBoundary>
       <Header setPage={setPage} />
-      {page === 'home' ? React.createElement(Home) : null}
-      {page === 'contacts' ? React.createElement(Contacts) : null}
-      {page === 'about' ? React.createElement(About) : null}
+      {page === 'home' && <Home />}
+      {page === 'contacts' && <Contacts />}
+      {page === 'about' && <About />}
     </ErrorBoundary>
   );
 }
 
-/* render */
-var root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(ThemeProvider, null, React.createElement(App, null)));
+// ===== Render =====
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <ThemeProvider>
+    <App />

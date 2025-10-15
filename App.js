@@ -6,7 +6,9 @@ function ThemeProvider(props) {
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
   return (
     <ThemeContext.Provider value={{ theme: theme, toggleTheme: toggleTheme }}>
-      <div className={theme === 'dark' ? 'dark-theme' : ''}>{props.children}</div>
+      <div className={theme === 'dark' ? 'dark-theme' : ''} style={{ minHeight: '100vh' }}>
+        {props.children}
+      </div>
     </ThemeContext.Provider>
   );
 }
@@ -78,7 +80,7 @@ function Modal(props) {
   );
 }
 
-/* ===== Home / TODO List ===== */
+/* ===== Home ===== */
 function Home() {
   const [tasks, setTasks] = React.useState(function() {
     const stored = localStorage.getItem('tasks');
@@ -135,14 +137,12 @@ function Home() {
       <ul className="todo-list">
         {tasks.map(function(task){
           return (
-            <li key={task.id} className={task.done ? 'done' : ''}>
+            <li key={task.id} className={task.done ? 'done' : ''} onClick={function(){openModal(task)}}>
               <div>
-                <input type="checkbox" checked={task.done} onChange={function(){toggleDone(task.id)}} />
-                <span onClick={function(){openModal(task)}} style={{cursor:'pointer', marginLeft:'8px'}}>
-                  {task.title}
-                </span>
+                <input type="checkbox" checked={task.done} onChange={function(e){e.stopPropagation(); toggleDone(task.id)}} />
+                <span style={{marginLeft:'8px'}}>{task.title}</span>
               </div>
-              <button className="btn btn-danger btn-sm" onClick={function(){deleteTask(task.id)}}>Delete</button>
+              <button className="btn btn-danger btn-sm" onClick={function(e){e.stopPropagation(); deleteTask(task.id)}}>Delete</button>
             </li>
           );
         })}
@@ -164,6 +164,7 @@ function Contacts() {
       <h2>Contacts</h2>
       <p>You can reach me via email: alina@example.com</p>
       <p>Or call: +123456789</p>
+      <p className="about-stickers">🐱 🐶 🌸 🎵 ✈️ 🍰</p>
     </div>
   );
 }
@@ -174,7 +175,7 @@ function About() {
     <div className="container">
       <h2>About Me</h2>
       <p>Hi! I'm Alina, a Project Manager. I love dancing, eating delicious food, traveling, and meeting new people!</p>
-      <p>Here are some fun stickers: 🐱🐶🌸🎵✈️🍰</p>
+      <p className="about-stickers">🐱🐶🌸🎵✈️🍰</p>
       <img src="Image1/cat.jpg" alt="Cat" />
     </div>
   );
